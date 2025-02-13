@@ -22,7 +22,6 @@ snotel_metadata_file <- "D:/CHI-ASU/R_MaCRIA/app/data/snotel_metadata.csv"
 basin_shapefile <- "D:/CHI-ASU/R_MaCRIA/app/shapefiles/crb_poly/basin_CRB_poly.shp"
 huc10_shapefile <- "D:/CHI-ASU/R_MaCRIA/app/shapefiles/huc10s/huc10s/selected_huc10s.shp"
 
-
 # Load and reproject spatial data
 basin_data <- st_read(basin_shapefile) %>% st_transform(crs = 4326) # WGS84
 huc10_data <- st_read(huc10_shapefile) %>% st_transform(crs = 4326) # WGS84
@@ -72,6 +71,7 @@ ui <- dashboardPage(
             menuItem("Spatial Maps", tabName = "spatial_maps", icon = icon("map")),
             menuItem("Infrastructure Assets", tabName = "assets", icon = icon("building")),
             menuItem("Stakeholder Engagement", tabName = "stakeholder", icon = icon("users")),
+            menuItem("Decision Making", tabName = "decision", icon = icon("clipboard-check")),
             menuItem("Help", tabName = "help", icon = icon("question-circle"))
         )
     ),
@@ -123,9 +123,6 @@ ui <- dashboardPage(
                             status = "primary",
                             solidHeader = TRUE,
                             plotlyOutput("comparisonPlot", height = 400),
-                            fluidRow(
-                          
-                            )
                         )
                     )
                 )
@@ -237,6 +234,36 @@ ui <- dashboardPage(
                     )
                 )
             ),
+            # Decision Making Tab
+            tabItem(
+                tabName = "decision",
+                h2("Decision Making Framework"),
+                fluidRow(
+                    column(
+                        width = 6,
+                        box(
+                            title = "Decision Scenarios",
+                            width = NULL,
+                            status = "info",
+                            solidHeader = TRUE,
+                            selectInput("scenario", "Select Scenario:",
+                                choices = c("Drought Response", "Cascading Threats", "Climate Adaptation", "Infrastructure Assessment")
+                            ),
+                            plotlyOutput("scenarioPlot")
+                        )
+                    ),
+                    column(
+                        width = 6,
+                        box(
+                            title = "Decision Metrics",
+                            width = NULL,
+                            status = "success",
+                            solidHeader = TRUE,
+                            DTOutput("decisionTable")
+                        )
+                    )
+                )
+            ),
             # Help Tab
             tabItem(
                 tabName = "help",
@@ -288,31 +315,7 @@ server <- function(input, output, session) {
         }
     })
 
-    # Animation Controls
-    observeEvent(input$startAnimation, {
-        plotlyProxy("comparisonPlot", session) %>%
-            plotlyProxyInvoke("restyle", list(visible = TRUE)) %>%
-            plotlyProxyInvoke("relayout", list(title = "Animation Started"))
-    })
-
-    observeEvent(input$pauseAnimation, {
-        plotlyProxy("comparisonPlot", session) %>%
-            plotlyProxyInvoke("restyle", list(visible = FALSE)) %>%
-            plotlyProxyInvoke("relayout", list(title = "Animation Paused"))
-    })
-
-    observeEvent(input$stopAnimation, {
-        plotlyProxy("comparisonPlot", session) %>%
-            plotlyProxyInvoke("restyle", list(visible = FALSE)) %>%
-            plotlyProxyInvoke("relayout", list(title = "Animation Stopped"))
-    })
-
-    observeEvent(input$resetAnimation, {
-        plotlyProxy("comparisonPlot", session) %>%
-            plotlyProxyInvoke("restyle", list(visible = TRUE)) %>%
-            plotlyProxyInvoke("relayout", list(title = "Animation Reset"))
-    })
-
+    
     # Monitoring Tab
     output$weeklyUpdates <- renderPlotly({
         plot_ly(
@@ -394,9 +397,22 @@ server <- function(input, output, session) {
 
     output$feedbackTable <- renderDT({
         datatable(data.frame(
-            Name = c("John Doe", "Jane Smith", "Tom Brown"),
-            Feedback = c("Great tool!", "Needs more data.", "Love the interface."),
+            Name = c("Praddy K", "Vivian ", "Callahan"),
+            Feedback = c("Data Accuracy?!", "Needs more data.", "Data Graphs download option."),
             Category = c("General Feedback", "Data Accuracy", "Visualization")
+        ))
+    })
+
+    # Decision Making Tab
+    output$scenarioPlot <- renderPlotly({
+        plot_ly(x = 1:10, y = rnorm(10), type = "scatter", mode = "lines") %>%
+            layout(title = paste("Scenario Analysis for", input$scenario))
+    })
+
+    output$decisionTable <- renderDT({
+        datatable(data.frame(
+            Metric = c("Water Availability", "Drought Risk", "Infrastructure Resilience"),
+            Value = c("High", "Medium", "Low")
         ))
     })
 }
